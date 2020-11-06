@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>Live Election Data Table</title>
+        <style type="text/css">
+            body {
+                background-color: black;
+                color: white;
+                font-family: "Consolas, monaco, monospace";
+                width: 100%;
+            }
+            table {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        </style>
+        <script type="application/javascript">
+        var cellBlue = "border: 1px solid white; border-collapse: collapse; padding: 5px; color: blue;";
+        var cellRed = "border: 1px solid white; border-collapse: collapse; padding: 5px; color: red;";
+        var cellCss = "border: 1px solid white; border-collapse: collapse; padding: 5px;";
+        function makeElecTotalTable(racesObject){
+            var dt2 = document.createElement("table");
+            dt2.style.cssText = cellCss;
+            dt2.appendChild(document.createElement("colgroup"));
+            [0,1].forEach(function(){
+                var col = document.createElement("col");
+                col.style.cssText = "width: 210px;";
+                dt2.firstChild.appendChild(col);
+            });
+            dt2.appendChild(document.createElement("tr"));
+            ['Joseph R. Biden Jr.','Donald J. Trump'].forEach((i)=>{
+                var th = document.createElement("th");
+                if(i.match('Biden')){
+                    th.style.cssText = cellBlue;
+                }
+                if(i.match('Trump')){
+                    th.style.cssText = cellRed;
+                }
+                th.innerText = i;
+                dt2.children[1].appendChild(th);
+            });
+            var row1 = document.createElement("tr");
+            var jb0 = document.createElement("td");
+            jb0.id = 'joebiden';
+            jb0.style.cssText = cellCss;
+            jb0.innerText = getSum(bidenElectoral(sortData(racesObject)));
+            var dt1 = document.createElement("td");
+            dt1.id = 'donaldtrump';
+            dt1.style.cssText = cellCss;
+            dt1.innerText = getSum(trumpElectoral(sortData(racesObject)));
+            [jb0,dt1].forEach((a)=>{
+                row1.appendChild(a);
+            });
+            dt2.appendChild(row1);
+            document.body.appendChild(dt2);
+        }
+        function heading(tagName,cssText,innerText){
+            var h = document.createElement(tagName);
+            h.style.cssText = cssText;
+            h.innerText = innerText;
+            document.body.appendChild(h);
+        }
+        function bidenElectoral(sortedJsonObject){
+            var bra = [];
+            sortedJsonObject.forEach((i)=>{
+                if(i.result.match('winner')){
+                    i.candidates.filter((a)=>{
+                        if(a.winner){
+                            if(a.name_display == 'Joseph R. Biden Jr.'){
+                                bra.push(i.electoral_votes);
+                            }
+                        }
+                    });
+                }
+            });
+            return bra;
+        }
+        function trumpElectoral(sortedJsonObject){
+            var tra = [];
+            sortedJsonObject.forEach((i)=>{
+                if(i.result.match('winner')){
+                    i.candidates.filter((a)=>{
+                        if(a.winner){
+                            if(a.name_display == 'Donald J. Trump'){
+                                tra.push(i.electoral_votes);
+                            }
+                        }
+                    });
+                }
+            });
+            return tra;
+        }
+        function sortData(jsonObject){
+            var sorted = jsonObject.sort(function(a,b){
+                return new Date(b.last_updated) - new Date(a.last_updated);
+            });
+            return sorted;
+        }
+        function getSum(sortedJson){
+            var sum = sortedJson.reduce(function(a, b){
+                return a + b;
+            }, 0);
+            return sum;
+        }
+        function makeCell(stateName,column,value,cssText){
+            var cell = document.createElement("td");
+            if(!column){
+                cell.id = stateName;
+            } else {
+                cell.id = stateName + column;
+            }
+            cell.style.cssText = cssText;
+            cell.innerText = value;
+            return cell;
+        }
+        function getBidenVotes(biden){
+            return biden.candidates.filter(function(a){if(a.name_display.match('Biden')){ return a}})[0].votes;
+        }
+        function getTrumpVotes(trump){
+            return trump.candidates.filter(function(a){if(a.name_display.match('Trump')){ return a}})[0].votes;
+        }
+        function makeTopTable(dataJson){
+            var topTable = document.createElement("table");
+            topTable.style.cssText = "padding: 5px;"
+            topTable.appendChild(document.createElement("colgroup"));
+            var count = 0;
+            [0,1].forEach(function(){
+                var col = document.createElement("col");
+                switch(count){
+                    case 0:{
+                        col.style.cssText = "width: 110px;";
+                        break;
+                    }
+                    case 1:{
+                        col.style.cssText = "width: 715px;";
+                        break;
+                    }
+                }
+                count++;
+                topTable.firstChild.appendChild(col);
+            });
+            var srcRow = document.createElement("tr");
+            var srcLabel = document.createElement("td");
+            var srcSpan1 = document.createElement("span");
+            srcSpan1.style.cssText = "color: yellow; white-space: nowrap;";
+            srcSpan1.innerText = "Data source:";
+            srcLabel.appendChild(srcSpan1);
+            var srcUri = document.createElement("td");
+            var srcA = document.createElement("a");
+            srcA.style.cssText = "color: chartreuse; white-space: nowrap; padding-left: 10px;";
+            srcA.href = "https://static01.nyt.com/elections-assets/2020/data/api/2020-11-03/national-map-page/national/president.json";
+            srcA.innerText = "https://static01.nyt.com/elections-assets/2020/data/api/2020-11-03/national-map-page/national/president.json";
+            srcA.target = "_blank";
+            srcUri.appendChild(srcA);
+            srcRow.appendChild(srcLabel);
+            srcRow.appendChild(srcUri);
+            topTable.appendChild(srcRow);
+            var versionRow = document.createElement("tr");
+            var verLabel = document.createElement("td");
+            var verSpan = document.createElement("span");
+            verSpan.style.cssText = "display: inline; color: yellow; white-space: nowrap;";
+            verSpan.innerText = "Json version:";
+            verLabel.appendChild(verSpan);
+            var verNo = document.createElement("td");
+            var verSpan2 = document.createElement("span");
+            verSpan2.style.cssText = "display: inline; color: chartreuse; white-space: nowrap; padding-left: 10px;";
+            verSpan2.id = "version";
+            verSpan2.innerText = dataJson.meta.version;
+            verNo.appendChild(verSpan2);
+            versionRow.appendChild(verLabel);
+            versionRow.appendChild(verNo);
+            topTable.appendChild(versionRow);
+            var tsRow = document.createElement("tr");
+            var tsLabel = document.createElement("td");
+            var tsSpan = document.createElement("span");
+            tsSpan.style.cssText = "display: inline; color: yellow; white-space: nowrap;";
+            tsSpan.innerText = "Last modified:";
+            tsLabel.appendChild(tsSpan);
+            var tsDate = document.createElement("td");
+            var tsSpan2 = document.createElement("span");
+            tsSpan2.style.cssText = "display: inline; color: chartreuse; white-space: nowrap; padding-left: 10px;";
+            tsSpan2.id = "timestamp";
+            tsSpan2.innerText = (new Date(dataJson.meta.timestamp)).toString();
+            tsDate.appendChild(tsSpan2);
+            tsRow.appendChild(tsLabel);
+            tsRow.appendChild(tsDate);
+            topTable.appendChild(tsRow);
+            document.body.appendChild(topTable);
+        }
+        function makeVCTable(dataObject){
+            var vcTable = document.createElement("table");
+            vcTable.style.cssText = "border: 1px solid white; border-collapse: collapse;";
+            var vcColgroup = document.createElement("colgroup");
+            [0,1].forEach((a)=>{
+                var vcCol = document.createElement("col");
+                vcCol.style.cssText = "width: 77.5px;"
+                vcColgroup.appendChild(vcCol);
+            })
+            vcTable.appendChild(vcColgroup);
+            var vcRow = document.createElement("tr");
+            var vcOne = document.createElement("td");
+            var vcTwo = document.createElement("td");
+            var sp1 = document.createElement("span");
+            var sp2 = document.createElement("span");
+            vcOne.style.cssText = cellCss;
+            vcTwo.style.cssText = cellCss;
+            sp1.id = dataObject.state_name + "_span1";
+            sp2.id = dataObject.state_name + "_span2";
+            if(getBidenVotes(dataObject) > getTrumpVotes(dataObject)){                
+                sp1.innerText = getBidenVotes(dataObject);
+                sp1.style.cssText = "display: inline; color: blue;";
+                sp2.innerText = getTrumpVotes(dataObject);
+                sp2.style.cssText = "display: inline; color: red;";
+            }
+            if(getTrumpVotes(dataObject) > getBidenVotes(dataObject)){
+                sp1.innerText = getTrumpVotes(dataObject);
+                sp1.style.cssText = "display: inline; color: red;";
+                sp2.innerText = getBidenVotes(dataObject);
+                sp2.style.cssText = "display: inline; color: blue;";
+            }
+            vcOne.appendChild(sp1);
+            vcTwo.appendChild(sp2);
+            vcRow.appendChild(vcOne);
+            vcRow.appendChild(vcTwo);
+            vcTable.appendChild(vcRow);
+            return vcTable;
+        }
+        function makeMainTable(){
+            var dt = document.createElement("table");
+            dt.id = "maintable";
+            dt.style.cssText = cellCss;
+            dt.appendChild(document.createElement("colgroup"));
+            var count = 0;
+            [0,1,2,3,4].forEach(function(){
+                var col = document.createElement("col");
+                switch(count){
+                    case 0: {
+                        col.style.cssText = "width: 120px;";
+                        break;
+                    }
+                    case 1: {
+                        col.style.cssText = "width: 145px;";
+                        break;
+                    }
+                    case 2: {
+                        col.style.cssText = "width: 155px;";
+                        break;
+                    }
+                    case 3: {
+                        col.style.cssText = "width: 120px;";
+                        break;
+                    }
+                    case 4: {
+                        col.style.cssText = "width: 150px;";
+                    }
+                }
+                count++;
+                dt.firstChild.appendChild(col);
+            });
+            dt.appendChild(document.createElement("tr"));
+            ["Electoral Votes","State","Winner / Vote Count","Lead margin %","Lead margin votes"].forEach((i)=>{
+                var th = document.createElement("th");
+                th.style.cssText = cellCss;
+                th.innerText = i;
+                dt.children[1].appendChild(th);
+            });
+            return dt;
+        }
+        function makeDataTable(){
+            heading("h1","text-align: center;","This webpage pulls a json file containing election stats once per second");
+            heading("h2","text-align: center;","Though, the remote json file is updated much less frequently");
+            heading("h3","text-align: center;","Data is pulled from The New York Times");
+            var j;
+            fetch("https://static01.nyt.com/elections-assets/2020/data/api/2020-11-03/national-map-page/national/president.json").then(function(resolve,reject){
+                resolve.text().then(function(result){
+                    j = JSON.parse(result);
+                    makeTopTable(j);
+                    makeElecTotalTable(j.data.races);
+                    var dt = makeMainTable();
+                    var pending = [];
+                    var determined = [];
+                    sortData(j.data.races).forEach((i)=>{
+                        var row = document.createElement("tr");
+                        row.id = i.state_name + "_row";
+                        if(i.result == 'winner'){
+                            if(i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display.match('Biden')){
+                                var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellBlue);
+                                var st = makeCell(i.state_name,null,i.state_name,cellBlue);
+                                var wi = makeCell(i.state_name,"_wi",i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display,cellBlue);
+                                var lp = makeCell(i.state_name,"_lp","*",cellBlue + "text-align: center;");
+                                var lv = makeCell(i.state_name,"_lv","*",cellBlue + "text-align: center;");
+                            }
+                            if(i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display.match('Trump')){
+                                var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellRed);
+                                var st = makeCell(i.state_name,null,i.state_name,cellRed);
+                                var wi = makeCell(i.state_name,"_wi",i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display,cellRed);
+                                var lp = makeCell(i.state_name,"_lp","*",cellRed + "text-align: center;");
+                                var lv = makeCell(i.state_name,"_lv","*",cellRed + "text-align: center;");
+                            }
+                            [ev,st,wi,lp,lv].forEach((a)=>{
+                                row.appendChild(a);
+                            });
+                            determined.push(row);
+                        } else {
+                            var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellCss);
+                            var st = makeCell(i.state_name,null,i.state_name,cellCss);
+                            var wi = makeCell(i.state_name,"_wi",null,"border: 1px solid white; border-collapse: collapse;");
+                            var totalVotes = getBidenVotes(i) + getTrumpVotes(i);
+                            if(getBidenVotes(i) > getTrumpVotes(i)){
+                                var lp = makeCell(i.state_name,"_lp",((getBidenVotes(i) / totalVotes) - (getTrumpVotes(i) / totalVotes)).toFixed(6) + "%",cellBlue + "text-align: center;");
+                                var lv = makeCell(i.state_name,"_lv",(getBidenVotes(i) - getTrumpVotes(i)) + " votes",cellBlue + "text-align: center;");
+                            }
+                            if(getTrumpVotes(i) > getBidenVotes(i)){
+                                var lp = makeCell(i.state_name,"_lp",((getTrumpVotes(i) / totalVotes) - (getBidenVotes(i) / totalVotes)).toFixed(6) + "%",cellRed + "text-align: center;");
+                                var lv = makeCell(i.state_name,"_lv",(getTrumpVotes(i) - getBidenVotes(i)) + " votes",cellRed + "text-align: center;");
+                            }
+                            wi.appendChild(makeVCTable(i));
+                            [ev,st,wi,lp,lv].forEach((a)=>{
+                                row.appendChild(a);
+                            });
+                            pending.push(row);
+                        }
+                    });
+                    pending.forEach((row)=>{
+                        dt.appendChild(row);
+                    })
+                    determined.forEach((row)=>{
+                        dt.appendChild(row);
+                    })
+                    document.body.appendChild(dt);
+                });
+            });
+            function updateTable(){
+                var j;
+                fetch("https://static01.nyt.com/elections-assets/2020/data/api/2020-11-03/national-map-page/national/president.json").then(function(resolve,reject){
+                    resolve.text().then(function(result){
+                        j = JSON.parse(result);
+                        document.getElementById("version").innerText = j.meta.version;
+                        document.getElementById("timestamp").innerText = (new Date(j.meta.timestamp)).toString();
+                        document.getElementById('joebiden').innerText = getSum(bidenElectoral(sortData(j.data.races)));
+                        document.getElementById('donaldtrump').innerText = getSum(trumpElectoral(sortData(j.data.races)));
+                        var pending = [];
+                        var determined = [];
+                        sortData(j.data.races).forEach((i)=>{
+                            var row = document.createElement("tr");
+                            row.id = i.state_name + "_row";
+                            if(i.result == 'winner'){
+                                if(i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display.match('Biden')){
+                                    var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellBlue);
+                                    var st = makeCell(i.state_name,null,i.state_name,cellBlue);
+                                    var wi = makeCell(i.state_name,"_wi",i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display,cellBlue);
+                                    var lp = makeCell(i.state_name,"_lp","*",cellBlue + "text-align: center;");
+                                    var lv = makeCell(i.state_name,"_lv","*",cellBlue + "text-align: center;");
+                                }
+                                if(i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display.match('Trump')){
+                                    var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellRed);
+                                    var st = makeCell(i.state_name,null,i.state_name,cellRed);
+                                    var wi = makeCell(i.state_name,"_wi",i.candidates.filter(function(a){if(a.winner){ return a }})[0].name_display,cellRed);
+                                    var lp = makeCell(i.state_name,"_lp","*",cellRed + "text-align: center;");
+                                    var lv = makeCell(i.state_name,"_lv","*",cellRed + "text-align: center;");
+                                }
+                                [ev,st,wi,lp,lv].forEach((a)=>{
+                                    row.appendChild(a);
+                                });
+                                determined.push(row);
+                            } else {
+                                var ev = makeCell(i.state_name,"_ev",i.electoral_votes,cellCss);
+                                var st = makeCell(i.state_name,null,i.state_name,cellCss);
+                                var wi = makeCell(i.state_name,"_wi",null,"border: 1px solid white; border-collapse: collapse;");
+                                var totalVotes = getBidenVotes(i) + getTrumpVotes(i);
+                                if(getBidenVotes(i) > getTrumpVotes(i)){
+                                    var lp = makeCell(i.state_name,"_lp",((getBidenVotes(i) / totalVotes) - (getTrumpVotes(i) / totalVotes)).toFixed(6) + "%",cellBlue + "text-align: center;");
+                                    var lv = makeCell(i.state_name,"_lv",(getBidenVotes(i) - getTrumpVotes(i)) + " votes",cellBlue + "text-align: center;");
+                                }
+                                if(getTrumpVotes(i) > getBidenVotes(i)){
+                                    var lp = makeCell(i.state_name,"_lp",((getTrumpVotes(i) / totalVotes) - (getBidenVotes(i) / totalVotes)).toFixed(6) + "%",cellRed + "text-align: center;");
+                                    var lv = makeCell(i.state_name,"_lv",(getTrumpVotes(i) - getBidenVotes(i)) + " votes",cellRed + "text-align: center;");
+                                }
+                                wi.appendChild(makeVCTable(i));
+                                [ev,st,wi,lp,lv].forEach((a)=>{
+                                    row.appendChild(a);
+                                });
+                                pending.push(row);
+                            }
+                        });
+                        pending.forEach((row)=>{
+                            [...row.children].forEach((a)=>{
+                                document.getElementById(row.id).removeChild(document.getElementById(a.id));
+                                document.getElementById(row.id).appendChild(a);
+                            });
+                        })
+                        determined.forEach((row)=>{
+                            [...row.children].forEach((a)=>{
+                                document.getElementById(row.id).removeChild(document.getElementById(a.id));
+                                document.getElementById(row.id).appendChild(a);
+                            })
+                        })
+                    });
+                });
+            }
+            setInterval(updateTable,1000);
+        }
+        if(document.readyState == "complete"){
+            makeDataTable();
+        } else {
+            console.log("loading script via EventListener");
+            document.addEventListener("DOMContentLoaded", makeDataTable);
+        }
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
